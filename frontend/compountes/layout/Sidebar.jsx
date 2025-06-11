@@ -15,6 +15,8 @@ import {
     MoneyCollectFilled,
     PlusOutlined,
     ProductOutlined,
+    BoldOutlined,
+    MoneyCollectOutlined,
 } from '@ant-design/icons';
 import { Link, useLocation } from 'react-router-dom';
 import { Button, Layout, Menu, theme } from 'antd';
@@ -41,14 +43,14 @@ const Adminlayout = ({ children }) => {
             label: <Link to='/add-product'>    محصولات اضافه كول</Link>,
         },
         {
-            key: '/پرزو اخستنه',
-            icon: <PlusOutlined />,
-            label: <Link to='/purchase'> پرزواخستنه</Link>,
+            key: '/  موجود مال ',
+            icon: <BoldOutlined />,
+            label: <Link to='/stock'>  موجود مال </Link>,
         },
         {
-            key: '/borrow',
-            icon: <ImportOutlined />,
-            label: <Link to='/borrow'>Borrowing</Link>,
+            key: '/sale',
+            icon: <MoneyCollectOutlined />,
+            label: <Link to='/sale'>خرڅلاو</Link>,
         },
         {
             key: '/customer',
