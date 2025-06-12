@@ -27,12 +27,13 @@ const Sales = () => {
         // Only fetch sales after products are loaded
         const salesResponse = await axios.get(API_URL);
         
-        // Map product names immediately
+        // Map product names and prices immediately
         const salesWithProductNames = salesResponse.data.map(sale => {
           const matchingProduct = productsResponse.data.find(p => p._id === sale.productName);
           return {
             ...sale,
-            productName: matchingProduct ? matchingProduct.name : sale.productName
+            productName: matchingProduct ? matchingProduct.name : sale.productName,
+            productPrice: matchingProduct ? matchingProduct.price : sale.salePrice
           };
         });
         
@@ -51,12 +52,13 @@ const Sales = () => {
     try {
       const res = await axios.get(API_URL);
       
-      // Map product names immediately using the existing products
+      // Map product names and prices immediately using the existing products
       const salesWithProductNames = res.data.map(sale => {
         const matchingProduct = products.find(p => p._id === sale.productName);
         return {
           ...sale,
-          productName: matchingProduct ? matchingProduct.name : sale.productName
+          productName: matchingProduct ? matchingProduct.name : sale.productName,
+          productPrice: matchingProduct ? matchingProduct.price : sale.salePrice
         };
       });
       
@@ -114,10 +116,14 @@ const Sales = () => {
       title: 'توکی',
       dataIndex: 'productName',
       key: 'productName',
+      align: 'right'
+    },
+    {
+      title: 'محصول نرخ',
+      dataIndex: 'productPrice',
+      key: 'productPrice',
       align: 'right',
-      render: (text, record) => (
-        <span>{text || 'نامعلوم'}</span>
-      )
+      render: (value) => `${value} افغانی`
     },
     {
       title: 'خرڅ نرخ',
