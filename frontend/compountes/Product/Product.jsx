@@ -3,6 +3,7 @@ import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Popcon
 import { EditOutlined, DeleteOutlined, ShoppingCartOutlined, ShoppingOutlined, DollarOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import Adminlayout from '../layout/Sidebar';
 import axios from 'axios';
+import TextArea from 'antd/es/input/TextArea';
 
 const { Option } = Select;
 
@@ -63,6 +64,7 @@ function Products() {
     { title: 'ډول', dataIndex: 'category', key: 'category', align: 'right', responsive: ['sm'] },
     { title: 'نرخ (افغانی)', dataIndex: 'price', key: 'price', align: 'right', responsive: ['md'] },
     { title: 'مقدار', dataIndex: 'quantity', key: 'quantity', align: 'right', responsive: ['md'] },
+    { title: 'توضیحات', dataIndex: 'توضیحات', key: 'توضیحات', align: 'right', responsive: ['md'] },
     {
       title: 'عملیات',
       key: 'actions',
@@ -97,6 +99,7 @@ function Products() {
     { title: 'ډول', dataIndex: 'category', key: 'category', align: 'right' },
     { title: 'نرخ (افغانی)', dataIndex: 'price', key: 'price', align: 'right' },
     { title: 'مقدار', dataIndex: 'quantity', key: 'quantity', align: 'right' },
+    { title: 'توضیحات', dataIndex: 'توضیحات', key: 'توضیحات', align: 'right' },
   ];
 
   const showModal = () => {
@@ -302,6 +305,13 @@ function Products() {
               rules={[{ required: true, message: 'مقدار ولیکئ' }]}
             >
               <InputNumber min={0} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item
+              label="توضیحات"
+              name="توضیحات"
+              rules={[{ required: true, message: 'توضیحات ولیکئ' }]}
+            >
+              <TextArea min={0} style={{ width: '100%' }} />
             </Form.Item>
 
             <Form.Item>
