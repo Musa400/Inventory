@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, message, Select, DatePicker, Card, Spin } from 'antd';
+import {
+  Table, Button, Modal, Form, Input, InputNumber,
+  message, Select, DatePicker, Card, Spin
+} from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import axios from 'axios';
@@ -20,24 +23,25 @@ const Sales = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        // Fetch products first and wait for them to be loaded
         const productsResponse = await axios.get(PRODUCTS_API_URL);
         setProducts(productsResponse.data);
-        
-        // Only fetch sales after products are loaded
+
         const salesResponse = await axios.get(API_URL);
-        
-        // Map product names and prices immediately
-        const salesWithProductNames = salesResponse.data.map(sale => {
+        // Add profit calculation here
+        const salesWithProfit = salesResponse.data.map(sale => {
           const matchingProduct = productsResponse.data.find(p => p._id === sale.productName);
+          const productPrice = matchingProduct ? matchingProduct.price : sale.salePrice;
+          const profit = (sale.salePrice - productPrice) * sale.quantity;
+
           return {
             ...sale,
             productName: matchingProduct ? matchingProduct.name : sale.productName,
-            productPrice: matchingProduct ? matchingProduct.price : sale.salePrice
+            productPrice,
+            profit,
           };
         });
-        
-        setSales(salesWithProductNames);
+
+        setSales(salesWithProfit);
       } catch (error) {
         console.error('Error fetching data:', error);
         message.error('د دې داتا راوړلو کې ستونزه وشوه');
@@ -45,24 +49,26 @@ const Sales = () => {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
   const fetchSales = async () => {
     try {
       const res = await axios.get(API_URL);
-      
-      // Map product names and prices immediately using the existing products
-      const salesWithProductNames = res.data.map(sale => {
+      const salesWithProfit = res.data.map(sale => {
         const matchingProduct = products.find(p => p._id === sale.productName);
+        const productPrice = matchingProduct ? matchingProduct.price : sale.salePrice;
+        const profit = (sale.salePrice - productPrice) * sale.quantity;
+
         return {
           ...sale,
           productName: matchingProduct ? matchingProduct.name : sale.productName,
-          productPrice: matchingProduct ? matchingProduct.price : sale.salePrice
+          productPrice,
+          profit,
         };
       });
-      
-      setSales(salesWithProductNames);
+      setSales(salesWithProfit);
     } catch (error) {
       console.error('Error in fetchSales:', error);
       message.error('خرڅ راوړلو کې ستونزه وشوه');
@@ -146,6 +152,13 @@ const Sales = () => {
       render: (value) => `${value} افغانی`
     },
     {
+      title: 'ګټه',
+      dataIndex: 'profit',
+      key: 'profit',
+      align: 'right',
+      render: (value) => `${value} افغانی`
+    },
+    {
       title: 'نیټه',
       dataIndex: 'date',
       key: 'date',
@@ -187,13 +200,35 @@ const Sales = () => {
 
   return (
     <Adminlayout>
-      <div className="p-4 max-w-5xl mx-auto" style={{ direction: 'rtl' }}>
+      <div className="p-4 max-w-6xl mx-auto" style={{ direction: 'rtl' }}>
         <h1 className="text-2xl font-bold text-center mb-6">خرڅ ثبتول او کتنه</h1>
 
         <div className="flex justify-end mb-4">
           <Button type="primary" onClick={showModal}>
             نوی خرڅ ثبت کړئ
           </Button>
+        </div>
+
+        {/* 📊 Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
+          <Card title="مجموع خرڅ" bordered className="text-center">
+            <p className="text-xl font-bold">{sales.length}</p>
+          </Card>
+          <Card title="ټول مقدار" bordered className="text-center">
+            <p className="text-xl font-bold">
+              {sales.reduce((total, sale) => total + sale.quantity, 0)}
+            </p>
+          </Card>
+          <Card title="ټوله عاید" bordered className="text-center">
+            <p className="text-xl font-bold">
+              {sales.reduce((total, sale) => total + sale.totalPrice, 0)} افغانی
+            </p>
+          </Card>
+          <Card title="ټول ګټه" bordered className="text-center">
+            <p className="text-xl font-bold">
+              {sales.reduce((total, sale) => total + (sale.profit || 0), 0)} افغانی
+            </p>
+          </Card>
         </div>
 
         <Card bordered>
