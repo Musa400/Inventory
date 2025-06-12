@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const productRoutes = require('./routes/product.routes');
 const addProductRoutes = require('./routes/addProduct.routes');
+const saleRoutes = require('./routes/sale');
 
 dotenv.config();
 const app = express();
@@ -15,6 +16,8 @@ app.use(express.json());
 // Routes
 app.use('/api/products', productRoutes);
 app.use('/api/add-product', addProductRoutes);
+app.use('/api/sales', saleRoutes);
+
 
 // Connect to MongoDB and start server
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
