@@ -21,6 +21,26 @@ function Products() {
     fetchCategories();
   }, []);
 
+  // Listen for sale updates
+  useEffect(() => {
+    const eventSource = new EventSource('http://localhost:2020/api/sales/stream');
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'saleCreated') {
+          fetchProducts();
+        }
+      } catch (error) {
+        console.error('Error parsing sale update:', error);
+      }
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, []);
+
   const fetchCategories = async () => {
     try {
       const res = await axios.get('http://localhost:2020/api/add-product/categories');

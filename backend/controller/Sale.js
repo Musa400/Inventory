@@ -1,4 +1,11 @@
 const Sale = require('../models/sale');
+const Product = require('../models/product.models');
+const EventEmitter = require('events');
+
+const saleEvents = new EventEmitter();
+
+// Export the event emitter for SSE
+exports.saleEvents = saleEvents;
 
 exports.getSales = async (req, res) => {
   try {
@@ -14,6 +21,18 @@ exports.createSale = async (req, res) => {
     const { productName, salePrice, quantity, date, customerName } = req.body;
     const totalPrice = salePrice * quantity;
 
+    // Find the product and update its quantity
+    const product = await Product.findById(productName);
+    if (!product) {
+      return res.status(404).json({ message: 'توکی پیدا نشد!' });
+    }
+
+    // Check if there's enough stock
+    if (product.quantity < quantity) {
+      return res.status(400).json({ message: 'مقدار زیاته ده!' });
+    }
+
+    // Create the sale
     const newSale = new Sale({
       productName,
       salePrice,
@@ -23,7 +42,19 @@ exports.createSale = async (req, res) => {
       customerName,
     });
 
+    // Update product quantity
+    product.quantity -= quantity;
+    if (product.quantity === 0) {
+      product.status = 'ختم شوی';
+    }
+    await product.save();
+
+    // Save the sale
     const savedSale = await newSale.save();
+
+    // Emit event for real-time updates
+    saleEvents.emit('saleCreated', { type: 'saleCreated', sale: savedSale });
+
     res.status(201).json(savedSale);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -62,4 +93,24 @@ exports.deleteSale = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+// Add SSE endpoint
+exports.streamSales = (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  // Send initial data
+  res.write('data: {"type": "connected"}\n\n');
+
+  // Listen for events
+  saleEvents.on('saleCreated', (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  });
+
+  // Handle client disconnection
+  req.on('close', () => {
+    console.log('Client disconnected from sales stream');
+  });
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, message, Card } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, message, Select, DatePicker, Card, Spin } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import axios from 'axios';
@@ -7,21 +7,62 @@ import Adminlayout from '../layout/Sidebar';
 
 const Sales = () => {
   const [sales, setSales] = useState([]);
+  const [products, setProducts] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [editingSale, setEditingSale] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const API_URL = 'http://localhost:2020/api/sales';
+  const PRODUCTS_API_URL = 'http://localhost:2020/api/products';
 
   useEffect(() => {
-    fetchSales();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        // Fetch products first and wait for them to be loaded
+        const productsResponse = await axios.get(PRODUCTS_API_URL);
+        setProducts(productsResponse.data);
+        
+        // Only fetch sales after products are loaded
+        const salesResponse = await axios.get(API_URL);
+        
+        // Map product names immediately
+        const salesWithProductNames = salesResponse.data.map(sale => {
+          const matchingProduct = productsResponse.data.find(p => p._id === sale.productName);
+          return {
+            ...sale,
+            productName: matchingProduct ? matchingProduct.name : sale.productName
+          };
+        });
+        
+        setSales(salesWithProductNames);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        message.error('د دې داتا راوړلو کې ستونزه وشوه');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   const fetchSales = async () => {
     try {
       const res = await axios.get(API_URL);
-      setSales(res.data);
+      
+      // Map product names immediately using the existing products
+      const salesWithProductNames = res.data.map(sale => {
+        const matchingProduct = products.find(p => p._id === sale.productName);
+        return {
+          ...sale,
+          productName: matchingProduct ? matchingProduct.name : sale.productName
+        };
+      });
+      
+      setSales(salesWithProductNames);
     } catch (error) {
+      console.error('Error in fetchSales:', error);
       message.error('خرڅ راوړلو کې ستونزه وشوه');
     }
   };
@@ -69,12 +110,48 @@ const Sales = () => {
   };
 
   const columns = [
-    { title: 'توکی', dataIndex: 'productName', key: 'productName', align: 'right' },
-    { title: 'خرڅ نرخ', dataIndex: 'salePrice', key: 'salePrice', align: 'right' },
-    { title: 'مقدار', dataIndex: 'quantity', key: 'quantity', align: 'right' },
-    { title: 'مجموعه قیمت', dataIndex: 'totalPrice', key: 'totalPrice', align: 'right' },
-    { title: 'نیټه', dataIndex: 'date', key: 'date', align: 'right' },
-    { title: 'مشتري نوم', dataIndex: 'customerName', key: 'customerName', align: 'right' },
+    {
+      title: 'توکی',
+      dataIndex: 'productName',
+      key: 'productName',
+      align: 'right',
+      render: (text, record) => (
+        <span>{text || 'نامعلوم'}</span>
+      )
+    },
+    {
+      title: 'خرڅ نرخ',
+      dataIndex: 'salePrice',
+      key: 'salePrice',
+      align: 'right',
+      render: (value) => `${value} افغانی`
+    },
+    {
+      title: 'مقدار',
+      dataIndex: 'quantity',
+      key: 'quantity',
+      align: 'right'
+    },
+    {
+      title: 'مجموعه قیمت',
+      dataIndex: 'totalPrice',
+      key: 'totalPrice',
+      align: 'right',
+      render: (value) => `${value} افغانی`
+    },
+    {
+      title: 'نیټه',
+      dataIndex: 'date',
+      key: 'date',
+      align: 'right',
+      render: (date) => dayjs(date).format('YYYY-MM-DD')
+    },
+    {
+      title: 'مشتري نوم',
+      dataIndex: 'customerName',
+      key: 'customerName',
+      align: 'right'
+    },
     {
       title: 'عملیات',
       key: 'actions',
@@ -114,16 +191,22 @@ const Sales = () => {
         </div>
 
         <Card bordered>
-          <Table
-            columns={columns}
-            dataSource={sales}
-            rowKey="_id"
-            pagination={{ pageSize: 5 }}
-            bordered
-            size="middle"
-            locale={{ emptyText: 'هیڅ خرڅ نشته' }}
-            scroll={{ x: true }}
-          />
+          {loading ? (
+            <Spin tip="د داتا راوړلو په حال کې...">
+              <div style={{ height: 400 }} />
+            </Spin>
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={sales}
+              rowKey="_id"
+              pagination={{ pageSize: 5 }}
+              bordered
+              size="middle"
+              locale={{ emptyText: 'هیڅ خرڅ نشته' }}
+              scroll={{ x: true }}
+            />
+          )}
         </Card>
 
         <Modal
@@ -139,7 +222,17 @@ const Sales = () => {
               name="productName"
               rules={[{ required: true, message: 'توکی ولیکئ' }]}
             >
-              <Input placeholder="توکی ولیکئ" />
+              <Select
+                placeholder="لطفاً توکی انتخاب کړئ"
+                showSearch
+                optionFilterProp="children"
+              >
+                {products.map(product => (
+                  <Select.Option key={product._id} value={product._id}>
+                    {product.name}
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
 
             <Form.Item
